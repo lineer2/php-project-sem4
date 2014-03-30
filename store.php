@@ -4,54 +4,45 @@ include 'includes/header.php';
 include 'includes/nav.php';
 ?>
 <?php
-require_once('config.php');
-$link = mysql_connect(DB_HOST, DB_USER, DB_PASSWORD);
-if (!$link) {
-  die("Cannot access db.");
-}
+//database connection
+require_once 'includes/dbManager.php';
+$dbManager = dbManager::getInstance();
 
-$db = mysql_select_db(DB_DATABASE);
-if(!$db) {
-  die("Unable to select database");
-}
 $products = array();
 
+//implementation of search functionality
 if ( isset($_GET['search']) ) 
 {
   $keyword = trim($_GET['search']);
-  $res = mysql_query("SELECT `tbl_product`.*,`tbl_category`.`cat_name`
+  $products = $dbManager->selectQuery("SELECT `tbl_product`.*,`tbl_category`.`cat_name`
           FROM `tbl_product`
           INNER JOIN `tbl_category`
           ON `tbl_product`.`cat_id`=`tbl_category`.`cat_id`
           WHERE `pd_name` LIKE '%".$keyword."%'
+  		  AND `tbl_product`.`pd_id` <> " . PLACEHOLDER_PROD_ID . "
           ORDER BY `pd_id` DESC");
-  while ($row = mysql_fetch_object($res)) {
-    $products[] = $row;
-  }
 }
+//implementation of filtering products by category
 elseif ( isset($_GET['category']) ) 
 {
   $category = trim($_GET['category']);
-  $res = mysql_query("SELECT `tbl_product`.*,`tbl_category`.`cat_name`
+  $products = $dbManager->selectQuery("SELECT `tbl_product`.*,`tbl_category`.`cat_name`
           FROM `tbl_product`
           INNER JOIN `tbl_category`
           ON `tbl_product`.`cat_id`=`tbl_category`.`cat_id`
           WHERE `tbl_product`.`cat_id`=".$category."
           ORDER BY `pd_id` DESC");
-  while ($row = mysql_fetch_object($res)) {
-    $products[] = $row;
-  }
 }
+
+//if neither search nor category were used, display all products
 else
 {
-  $res = mysql_query("SELECT `tbl_product`.*,`tbl_category`.`cat_name`
+  $products = $dbManager->selectQuery("SELECT `tbl_product`.*,`tbl_category`.`cat_name`
           FROM `tbl_product`
           INNER JOIN `tbl_category`
           ON `tbl_product`.`cat_id`=`tbl_category`.`cat_id`
+  		  WHERE `tbl_product`.`pd_id` <> " . PLACEHOLDER_PROD_ID . "
           ORDER BY `pd_id` DESC");
-  while ($row = mysql_fetch_object($res)) {
-    $products[] = $row;
-  }
 }
 ?>
 <div id="main">
@@ -68,7 +59,6 @@ else
             <div class="thumbnail">
               <img src="img/uploads/<?php echo $product->pd_image ?>" alt="<?php echo $product->pd_name ?>">
               <div class="caption">
-                 <!--<h4 class="text-center"><?php //echo $product->pd_name ?><small>&nbsp;&nbsp;<?php //echo $product->pd_price ?> &euro;</small></h4>-->
                  <h4 class="text-center">
                      <abbr title="<?php echo $product->pd_name ?>" ><?php echo trim_text($product->pd_name); ?></abbr>
                      <small>&nbsp;<?php echo $product->pd_price ?> &euro;</small>
@@ -117,7 +107,7 @@ function trim_text($input, $length = 12, $ellipses = false, $strip_html = false)
     //find last space within length
 //    $last_space = strrpos(substr($input, 0, $length), ' ');
 //    $trimmed_text = substr($input, 0, $last_space);
-    
+
     $trimmed_text = substr($input, 0, $length);
   
     //add ellipses (...)

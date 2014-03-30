@@ -1,33 +1,27 @@
 <?php 
 //session_start();
 if(!isset($_SESSION)) session_start();
-//Include database connection details
-require_once(__DIR__.'/../config.php');
+
 $user_id = $_SESSION['SESS_USER_ID'];
-$link = mysql_connect(DB_HOST, DB_USER, DB_PASSWORD);
-if (!$link) {
-	die("Cannot access db.");
-}
 
+//database connection
+require_once(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'dbManager.php');
+$dbManager = dbManager::getInstance();
 
-$db = mysql_select_db(DB_DATABASE);
-if(!$db) {
-	die("Unable to select database");
-}
+//getting user data from db
+$user = $dbManager->selectQuery("SELECT * FROM tbl_user WHERE user_id=".$user_id." LIMIT 1");
+$user = $user[0];
 
-$res = mysql_query("SELECT * FROM tbl_user WHERE user_id=".$user_id." LIMIT 1");
-$user = mysql_fetch_assoc($res);
-
-$ord_res = mysql_query("SELECT `tbl_order`.*,GROUP_CONCAT(`pd_name` SEPARATOR ', ') as `products`
+//getting order data from db
+$orders = $dbManager->selectQuery("SELECT `tbl_order`.*,GROUP_CONCAT(`pd_name` SEPARATOR ', ') as `products`
 						FROM `tbl_order`,`tbl_order_item`, `tbl_product`
 						WHERE `tbl_order`.`od_id` = `tbl_order_item`.`od_id` 
 						AND `tbl_product`.`pd_id` = `tbl_order_item`.`pd_id`
 						AND user_id=".$user_id." GROUP BY `od_id`");
-while ($row = mysql_fetch_object($ord_res)) {
-	$orders[] = $row;
-}
 
+//handling requests for profile changes
 if(is_array($_POST) && count($_POST) > 0) {
+	//password change
 	$password = $_POST['password'];
 	$cpassword = $_POST['cpassword'];
 
@@ -56,12 +50,12 @@ if(is_array($_POST) && count($_POST) > 0) {
 	}
 	//Create INSERT query
 	$qry = "UPDATE tbl_user SET password='".md5($_POST['password'])."', updated_at='".date("Y-m-d H:i:s")."' WHERE user_id=$user_id";
-	$result = @mysql_query($qry);
+	$result = $dbManager->query($qry);
 	//Check whether the query was successful or not
 	if($result) {
 		$_SESSION['MSGS'] = array('Your password was changed successfully.');
 		session_write_close();
-		header("location: ..\profile.php");
+		header("location: ..\\profile.php");
 		exit();
 	}else {
 		die("Query failed: ".mysql_error());

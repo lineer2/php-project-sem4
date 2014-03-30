@@ -10,6 +10,7 @@ include 'includes/nav.php';
   <div class="container">
     <div class="row">
       <div class="col-md-7 col-sm-6">
+      <!-- display items in cart -->
         <?php if( count($_SESSION['CART']) > 0 )  { ?>
         <h4>Review Order Items</h4>
     	<div class="table-responsive">
@@ -25,12 +26,12 @@ include 'includes/nav.php';
                 <?php
     $_SESSION['total'] = 0;
                 foreach ($_SESSION['CART'] as $item) {
-      $_SESSION['total'] += $item['pd_price'];
+      $_SESSION['total'] += $item->pd_price;
                   ?>
                   <tr>
-                    <td><?php echo $item['pd_name'] ?></td>
-                    <td class="text-center"><?php echo sprintf('%01.2f', $item['pd_price']); ?></td>
-                    <td class="text-center"><a href="cart.php?del=<?php echo $item['pd_id'] ?>">Remove</a></td>
+                    <td><?php echo $item->pd_name ?></td>
+                    <td class="text-center"><?php echo sprintf('%01.2f', $item->pd_price); ?></td>
+                    <td class="text-center"><a href="cart.php?del=<?php echo $item->pd_id ?>">Remove</a></td>
                   </tr>
                   <?php
                 }
@@ -93,6 +94,7 @@ include 'includes/nav.php';
     </div>
   </div>
 </div>
+<!-- script checking if necessary fields were filled by user -->
 <script>
     $('#oform').submit(function(e){
       $('.alert').remove();
